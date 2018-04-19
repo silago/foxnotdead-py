@@ -3,6 +3,7 @@ from peewee import *
 import application.foxnotdead.connection as connection
 
 class BaseState(Model):
+    id = PrimaryKeyField(null=False)
     commands = {
         "i" : commands.InfoCommand
     }
@@ -22,7 +23,12 @@ class BaseState(Model):
 
     @classmethod
     def get_state(cls, id):
-        state = BaseState.get(BaseState.id == id)
+        try:
+            state = BaseState.get(BaseState.id == id)
+        except Exception as e:
+            print("colud not get state from db.")
+            print(e)
+
         return state
 
     def process_input(self, user, input: str):
