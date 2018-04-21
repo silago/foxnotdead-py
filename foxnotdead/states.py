@@ -4,6 +4,7 @@ import application.foxnotdead.connection as connection
 
 class BaseState(Model):
     id = PrimaryKeyField(null=False)
+    _id = 0
     commands = {
         "i" : commands.InfoCommand
     }
@@ -17,19 +18,15 @@ class BaseState(Model):
 
     @staticmethod
     def get_states():
-        return {_.id: _ for _ in (
+        return {_._id: _ for _ in (
             WalkState, AgressiveSpottedState, NotAgressiveSpottedState, BattleState, InitState, DeathState, WinState
         )}
 
     @classmethod
-    def get_state(cls, id):
-        try:
-            state = BaseState.get(BaseState.id == id)
-        except Exception as e:
-            print("colud not get state from db.")
-            print(e)
-
-        return state
+    def get_state(cls, id): # from db and bind it
+        print("find state # " + str(id))
+        dbstate = BaseState.get(BaseState.id == id)
+        return dbstate._as(cls.get_states().get(dbstate.id,dbstate))
 
     def process_input(self, user, input: str):
         commands = self.get_commands()
@@ -39,6 +36,11 @@ class BaseState(Model):
             return result
         else:
             return None
+
+    def _as(self, _class):
+        self.__class__ = _class
+        return self
+
 
 
     def get_commands(self):
@@ -52,7 +54,7 @@ class BaseState(Model):
 
 class WalkState(BaseState):
     caption = "you are walking"
-    id = 1
+    _id = 1
     commands = {
         "w": commands.WalkCommand
     }
@@ -70,7 +72,7 @@ class BattleState(BaseState):
         pass
 
 
-    id = 2
+    _id = 2
     commands = {
         "k": commands.KickCommand
     }
@@ -78,7 +80,7 @@ class BattleState(BaseState):
 
 class NotAgressiveSpottedState(BaseState):
     caption = "not agressive enemy spotted "
-    id = 3
+    _id = 3
     commands = {
         "r": commands.RunCommand,
         "a": commands.AttackCommand,
@@ -87,7 +89,7 @@ class NotAgressiveSpottedState(BaseState):
 
 class AgressiveSpottedState(BaseState):
     caption = "agressive enemy spotted "
-    id = 4
+    _id = 4
     commands = {
         "r": commands.RunCommand,
         "a": commands.AttackCommand,
@@ -95,12 +97,12 @@ class AgressiveSpottedState(BaseState):
 
 
 class InitState(BaseState):
-    id = 5
+    _id = 5
 
 
 class DeathState(BaseState):
     caption = "you dead"
-    id = 6
+    _id = 6
     commands = {
         "*": InitState
     }
@@ -109,7 +111,7 @@ class DeathState(BaseState):
 
 class WinState(BaseState):
     caption = "you win"
-    id = 7
+    _id = 7
     commands = {
         "*": WalkState
     }

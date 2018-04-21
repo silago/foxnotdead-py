@@ -1,6 +1,7 @@
 from random import randint
 from . import users
 from . import states
+from . import items as _items
 
 
 class Command:
@@ -15,10 +16,20 @@ class InfoCommand(Command):
 
     @classmethod
     def execute(cls, user):
-        items = user.get_items()
-        stats = ""
+        result = ""
+        items = _items.UserItems.get_user_items(user.id)
 
-        pass
+
+        #items = user.get_items()
+        for i in items:
+            print(i)
+        if not items:
+            result = "you have nothing \r\n"
+        else:
+            result = "you have something \r\n"
+        return result
+
+
 
 
 

@@ -1,8 +1,10 @@
 from .import  states
 from peewee import *
 import application.foxnotdead.connection as connection
+from . import items
 
 class User(Model):
+    id = PrimaryKeyField(null=False)
     name      = CharField()
     state_id  = IntegerField()
 
@@ -11,6 +13,8 @@ class User(Model):
     location = 0
     battle_id = 0
     health = 50
+
+
 
     @staticmethod
     def get_user(id) -> object:
@@ -36,7 +40,13 @@ class User(Model):
         self.StateID = state.id
         print(self.StateID)
         self.state_param = state_param
+        self.state_id = state.id
+        print(self.state_id)
+        self.save()
         pass
+
+    def get_items(self):
+        return items.UserItems.get_user_items(self.id)
 
     @staticmethod
     def create_bot():
