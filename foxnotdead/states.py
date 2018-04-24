@@ -10,9 +10,6 @@ class BaseState(Model):
     }
     caption = "no state description"
 
-    #def __init__(self, user):
-    #    self.User = user
-
     def get_caption(self):
         return self.caption
 
@@ -83,7 +80,8 @@ class BattleState(BaseState):
 
     db_id = 2
     commands = {
-        "k": commands.KickCommand
+        "k": commands.KickCommand,
+        "e": commands.InspectEnemyCommand,
     }
 
 
@@ -114,7 +112,8 @@ class DeathState(BaseState):
     caption = "you dead"
     db_id = 6
     commands = {
-        "*": InitState
+        "*": InitState,
+        "w": commands.WalkCommand
     }
     pass
 

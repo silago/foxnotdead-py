@@ -18,6 +18,9 @@ class InfoCommand(Command):
     def execute(cls, user):
         result = ""
         items = _items.UserItems.get_user_items(user.id)
+        stats = user.get_stats()
+
+
         #items = user.get_items()
         for i in items:
             print(i)
@@ -102,7 +105,8 @@ class KickCommand(Command):
         result = ""
 
         user = user
-        bot = users.User.get_user(user.state_param)
+        bot_id = battle.BattleData.get_enemy_id(user.id)
+        bot = users.User.get_user(bot_id)
         damage = user.damage + randint(-2, +2)
         bot.health -= damage
         result += "you've kicked enemy at " + str(damage) + ", " + str(bot.health) + " health left \r\n"
@@ -111,10 +115,10 @@ class KickCommand(Command):
             user.set_state(states.WinState)
 
         damage = bot.damage + randint(-2, +2)
-        result += "you've kicked enemy at " + str(damage) + ", " + str(user.health) + " health left"
+        result += "enemy kicked you at " + str(damage) + ", " + str(user.health) + " health left"
         user.health -= damage
         if user.health <= 0:
-            battle.BattleData.finish(users.id)
+            battle.BattleData.finish(user.id)
             user.set_state(states.DeathState)
         return result
 

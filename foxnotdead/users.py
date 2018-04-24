@@ -2,6 +2,7 @@ from .import  states
 from peewee import *
 import application.foxnotdead.connection as connection
 from . import items
+from . import stats
 
 class User(Model):
     id = PrimaryKeyField(null=False)
@@ -14,12 +15,68 @@ class User(Model):
     battle_id = 0
     health = 50
 
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.Level = 1
+        self.damage = 10
+        self.health = 100
+        self._stats = self._get_stats()
+
+
+    def on_equip_(self):
+        pass
+
+    def on_dequip_(self):
+        pass
+
+    def update_stats(self):
+        # get level stats
+        # get equipped items stats
+        pass
+
+
+    def get_stats(self):
+        return self._stats
+
+    def _get_stats(self):
+
+        result = {}
+        stats_keys = stats.Stats.all()
+        stats_vals =  stats.UserStats.select().wheres(stats.UserStats.user_id == self.id)
+
+        for _ in stats_keys:
+            for s in stats_vals:
+                if s.stat_id == _.id:
+                    result[_.key]=s.value
+
+        return result
+
+
+    def _compute_stat(self, stat_id):
+        # compute stats:
+        # 1. compute user class level stats
+        # 2. compute user items stats
+        # 3 ???
+        return 100
+        pass
+
+    def _compute_stats(self):
+       stats_keys = stats.Stats.all()
+       result = {}
+       for stats_key in stats_keys:
+           result[stats_keys.key] = self._compute_stat(stats_keys.id)
+           stat = stats.UserStats.get_or_create(stats.UserStats.user_id == self.id, stats.UserStats.stat_id == stats_key.stat_id)
+           stat.value = result[stats_keys.key]
+           stat.save()
+       self._stats = result
+
+
+    def get_damage(self):
+        pass
+
 
     def get_info(self):
         return "It's some bot"
-
-
-
 
     @staticmethod
     def get_user(id) -> object:
@@ -60,4 +117,19 @@ class User(Model):
     class Meta:
         database = connection.db
         table_name = "users"
+
+
+
+
+class Levels(Model):
+    pass
+
+class Class(Model):
+    pass
+
+class UserClass(Model):
+    pass
+
+class ClassLevelStats(Model):
+    pass
 
