@@ -42,7 +42,7 @@ class User(Model):
 
         result = {}
         stats_keys = stats.Stats.all()
-        stats_vals =  stats.UserStats.select().wheres(stats.UserStats.user_id == self.id)
+        stats_vals =  stats.UserStats.select().where(stats.UserStats.user_id == self.id)
 
         for _ in stats_keys:
             for s in stats_vals:

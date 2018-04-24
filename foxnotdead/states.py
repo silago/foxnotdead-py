@@ -6,7 +6,15 @@ class BaseState(Model):
     id = PrimaryKeyField(null=False)
     db_id = 0
     commands = {
-        "i" : commands.InfoCommand
+        "i" : commands.InfoCommand,
+        "u1" : commands.UseItemCommand.Init(1),
+        "u2" : commands.UseItemCommand.Init(2),
+        "u3" : commands.UseItemCommand.Init(3),
+        "u4" : commands.UseItemCommand.Init(4),
+        "u5" : commands.UseItemCommand.Init(5),
+        "u6" : commands.UseItemCommand.Init(6),
+        "u7" : commands.UseItemCommand.Init(7),
+        "u8" : commands.UseItemCommand.Init(8)
     }
     caption = "no state description"
 

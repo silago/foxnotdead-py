@@ -34,10 +34,20 @@ class UserItems(Model):
     @classmethod
     def get_user_items(cls,user_id):
         _items = UserItems\
-            .select(UserItems)\
+            .select(Items.id, Items.name, UserItems.count)\
             .join(Items, on=(UserItems.item_id == Items.id)).alias('I')\
             .where(UserItems.user_id == user_id)
+
         return _items
     class Meta:
         database = connection.db
         table_name = "user_items"
+
+class ItemsStats(Model):
+    id = PrimaryKeyField(null=False)
+    item_id = IntegerField()
+    stat_id = IntegerField()
+    value = IntegerField()
+    class Meta:
+        database = connection.db
+        table_name = "item_stats"

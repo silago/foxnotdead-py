@@ -1,6 +1,7 @@
 from random import randint
 from . import users
 from . import states
+from . import stats
 from . import battle
 from . import items as _items
 
@@ -20,22 +21,21 @@ class InfoCommand(Command):
         items = _items.UserItems.get_user_items(user.id)
         stats = user.get_stats()
 
-
-        #items = user.get_items()
-        for i in items:
-            print(i)
+        # items = user.get_items()
         if not items:
             result = "you have nothing \r\n"
         else:
-            result = "you have something \r\n"
+            result = "you have: \r\n"
+            i = 0
+            for _ in items:
+                i += 1
+                result += " " + str(i) + ")" + str(_.count) + " " + _.items.name + "\r\n"
         return result
-
-
-
 
 
 class ShowItemsCommand(Command):
     action = "i"
+
 
 class WalkCommand(Command):
     action = "w"
@@ -122,6 +122,67 @@ class KickCommand(Command):
             user.set_state(states.DeathState)
         return result
 
+
+class UseItemCommand(Command):
+    @staticmethod
+    def Init(n):
+        return UseItemCommand(n)
+
+    def __init__(self, number):
+        self.item_id = number
+        self.caption = "use intem # " + str(number)
+
+    def execute(self, user):
+        item_id = self.item_id
+        item = _items.Items.get(_items.Items.id == item_id)
+        result = "ypu are using " + item.name + "\r\n"
+
+        ui = _items.UserItems.get(_items.UserItems.item_id == item_id, _items.UserItems.user_id == user.id)
+        ui.count -= 1
+
+        item_stats = _items.ItemsStats.select().where(_items.ItemsStats.item_id == item_id)
+        user_stats = stats.UserStats.select().where(stats.UserStats.user_id == user.id)
+        for item_stat in item_stats:
+            for user_stat in user_stats:
+                if (user_stat.stat_id == item_stat.stat_id):
+                    user_stat.value += item_stat.value
+                    user_stat.save()
+                    result += "stat " + str(user_stat.stat_id) + "+= "+str(user_stat.value)
+                pass
+        result+="\r\n"
+        result += str(ui.count) + " " + item.name + " left"
+        return result
+
+        pass
+
+
+"""
+class UseItemCommand(Command):
+    captiom = "use item"
+    @classmethod
+    def execute(cls, user, id):
+        bot_id = battle.BattleData.get_enemy_id(user.id)
+        bot = users.User.get_user(bot_id)
+        return bot.get_info()
+
+class ShowInventory(Command):
+    caption = "Show inventory "
+    @classmethod
+    def execute(cls, user):
+        result = ""
+        items = _items.UserItems.get_user_items(user.id)
+        if not items:
+            result = "you have nothing \r\n"
+        else:
+            result = "you have: \r\n"
+            i = 0
+            for _ in items:
+                i+=1
+                result += " "+str(i)+")" + str(_.count) + " " + _.items.name + "\r\n"
+        return result
+"""
+
+
 class InspectEnemyCommand(Command):
     caption = "Inspect enemy"
 
@@ -141,6 +202,7 @@ class InspectEnemyCommand(Command):
     ....
     bool reserved
 """
+
 
 def GetParamActionCommands():
     pass
