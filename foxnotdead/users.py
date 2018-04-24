@@ -15,6 +15,11 @@ class User(Model):
     health = 50
 
 
+    def get_info(self):
+        return "It's some bot"
+
+
+
 
     @staticmethod
     def get_user(id) -> object:
@@ -26,7 +31,6 @@ class User(Model):
         user.Name = "Silago"
         user.Class = None
         user.Level = 1
-        user.StateID = 1
         user.damage = 10
         user.health = 100
         return user
@@ -36,14 +40,9 @@ class User(Model):
 
     def set_state(self, state, state_param = None):
         print("SET STATE")
-        self.state = state
-        self.StateID = state.id
-        print(self.StateID)
-        self.state_param = state_param
-        self.state_id = state.id
-        print(self.state_id)
+        self.state_id = state.db_id
+        #self.state_param = state_param
         self.save()
-        pass
 
     def get_items(self):
         return items.UserItems.get_user_items(self.id)
@@ -51,12 +50,11 @@ class User(Model):
     @staticmethod
     def create_bot():
         bot = User()
-        bot.is_bot = True
-        bot.id = 11
-        bot.Name = "Bot"
-        bot.Class = None
-        bot.Level = 1
-        bot.State = 0
+        bot.name = "Bot"
+        #bot.Class = None
+        #bot.Level = 1
+        bot.is_bot = 1
+        bot.save()
         return bot
 
     class Meta:

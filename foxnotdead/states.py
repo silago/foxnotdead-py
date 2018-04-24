@@ -4,7 +4,7 @@ import application.foxnotdead.connection as connection
 
 class BaseState(Model):
     id = PrimaryKeyField(null=False)
-    _id = 0
+    db_id = 0
     commands = {
         "i" : commands.InfoCommand
     }
@@ -18,7 +18,7 @@ class BaseState(Model):
 
     @staticmethod
     def get_states():
-        return {_._id: _ for _ in (
+        return {_.db_id: _ for _ in (
             WalkState, AgressiveSpottedState, NotAgressiveSpottedState, BattleState, InitState, DeathState, WinState
         )}
 
@@ -42,6 +42,15 @@ class BaseState(Model):
         return self
 
 
+    @classmethod
+    def get_id(cls):
+        return cls.db_id
+
+    @classmethod
+    def get_self(cls):
+        print()
+        pass
+
 
     def get_commands(self):
         base_commands = BaseState.commands
@@ -54,7 +63,7 @@ class BaseState(Model):
 
 class WalkState(BaseState):
     caption = "you are walking"
-    _id = 1
+    db_id = 1
     commands = {
         "w": commands.WalkCommand
     }
@@ -72,7 +81,7 @@ class BattleState(BaseState):
         pass
 
 
-    _id = 2
+    db_id = 2
     commands = {
         "k": commands.KickCommand
     }
@@ -80,7 +89,7 @@ class BattleState(BaseState):
 
 class NotAgressiveSpottedState(BaseState):
     caption = "not agressive enemy spotted "
-    _id = 3
+    db_id = 3
     commands = {
         "r": commands.RunCommand,
         "a": commands.AttackCommand,
@@ -89,20 +98,21 @@ class NotAgressiveSpottedState(BaseState):
 
 class AgressiveSpottedState(BaseState):
     caption = "agressive enemy spotted "
-    _id = 4
+    db_id = 4
     commands = {
         "r": commands.RunCommand,
         "a": commands.AttackCommand,
+        "e": commands.InspectEnemyCommand,
     }
 
 
 class InitState(BaseState):
-    _id = 5
+    db_id = 5
 
 
 class DeathState(BaseState):
     caption = "you dead"
-    _id = 6
+    db_id = 6
     commands = {
         "*": InitState
     }
@@ -111,7 +121,7 @@ class DeathState(BaseState):
 
 class WinState(BaseState):
     caption = "you win"
-    _id = 7
+    db_id = 7
     commands = {
         "*": WalkState
     }

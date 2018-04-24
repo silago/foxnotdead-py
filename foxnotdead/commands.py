@@ -1,11 +1,11 @@
 from random import randint
 from . import users
 from . import states
+from . import battle
 from . import items as _items
 
 
 class Command:
-
     def __init__(self, action, caption):
         pass
 
@@ -18,8 +18,6 @@ class InfoCommand(Command):
     def execute(cls, user):
         result = ""
         items = _items.UserItems.get_user_items(user.id)
-
-
         #items = user.get_items()
         for i in items:
             print(i)
@@ -52,11 +50,15 @@ class WalkCommand(Command):
     def execute(cls, user) -> str:
         # return msg , state, params, maybe
         x = randint(cls.AGRESSIVE_SPOTTED, cls.NOTHING_SPOTTED)
-        if (x == cls.NOT_AGRESSIVE_SPOTTED):  # if got troubles
-            user.set_state(states.NotAgressiveSpottedState, cls.create_bot())
+        if x == cls.NOT_AGRESSIVE_SPOTTED:  # if got troubles
+            bot = cls.create_bot()
+            battle.BattleData.start(user.id, bot.id)
+            user.set_state(states.NotAgressiveSpottedState)
             return "friendly man spotted"
-        if (x == cls.AGRESSIVE_SPOTTED):  # if got troubles
-            user.set_state(states.AgressiveSpottedState, cls.create_bot())
+        if x == cls.AGRESSIVE_SPOTTED:  # if got troubles
+            bot = cls.create_bot()
+            battle.BattleData.start(user.id, bot.id)
+            user.set_state(states.AgressiveSpottedState)
             return "agressive enemy spotted"
         else:
             return "nothing happens"
@@ -73,6 +75,7 @@ class RunCommand(Command):
         have_run = randint(0, 1)
         if have_run:
             user.set_state(states.WalkState)
+            battle.BattleData.finish(users.id)
             return "you've runned"
         else:
             user.set_state(states.BattleState)
@@ -104,14 +107,25 @@ class KickCommand(Command):
         bot.health -= damage
         result += "you've kicked enemy at " + str(damage) + ", " + str(bot.health) + " health left \r\n"
         if bot.health <= 0:
+            battle.BattleData.finish(users.id)
             user.set_state(states.WinState)
 
         damage = bot.damage + randint(-2, +2)
         result += "you've kicked enemy at " + str(damage) + ", " + str(user.health) + " health left"
         user.health -= damage
         if user.health <= 0:
+            battle.BattleData.finish(users.id)
             user.set_state(states.DeathState)
         return result
+
+class InspectEnemyCommand(Command):
+    caption = "Inspect enemy"
+
+    @classmethod
+    def execute(cls, user):
+        bot_id = battle.BattleData.get_enemy_id(user.id)
+        bot = users.User.get_user(bot_id)
+        return bot.get_info()
 
 
 """
