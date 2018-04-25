@@ -4,10 +4,22 @@ import application.foxnotdead.connection as connection
 from . import items
 from . import stats
 
+
+class BotTemplate(Model):
+    id   = PrimaryKeyField(null=False)
+    reward_container_id = IntegerField()
+    level_id            = IntegerField()
+
+    class Meta:
+        database = connection.db
+        table_name = "bot_templates"
+
+
 class User(Model):
     id = PrimaryKeyField(null=False)
     name      = CharField()
     state_id  = IntegerField()
+    prev_state_id  = IntegerField()
 
     id = 0
     is_bot = False
@@ -90,14 +102,19 @@ class User(Model):
         user.Level = 1
         user.damage = 10
         user.health = 100
+
+
+
+
         return user
 
     def get_state(self):
         return states.BaseState.get_state(self.state_id)
 
     def set_state(self, state, state_param = None):
-        print("SET STATE")
+        self.prev_state_id = self.state_id
         self.state_id = state.db_id
+
         #self.state_param = state_param
         self.save()
 
@@ -108,10 +125,11 @@ class User(Model):
     def create_bot():
         bot = User()
         bot.name = "Bot"
-        #bot.Class = None
-        #bot.Level = 1
         bot.is_bot = 1
         bot.save()
+
+
+
         return bot
 
     class Meta:

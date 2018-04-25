@@ -14,7 +14,7 @@ class App:
         user = users.User.get(users.User.name == 'silago')
         while True:
             state = user.get_state()
-            commands = state.get_commands()
+            commands = state.get_commands(user)
             print("current state: "+ state.get_caption())
             for _ in commands:
                 print(_ + " " + commands[_].caption)

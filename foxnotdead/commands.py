@@ -11,6 +11,27 @@ class Command:
         pass
 
 
+class BackCommand(Command):
+    action = "b"
+    caption = "go back"
+
+    @classmethod
+    def execute(cls, user):
+        user.state_id = user.prev_state_id
+        user.prev_state_id = None
+        user.save()
+        return "return"
+
+class ViewInventory(Command):
+    action = "u"
+    caption = "use item"
+
+    @classmethod
+    def execute(cls, user):
+        user.set_state(states.UseItemState)
+        return "Choose item to use"
+
+
 class InfoCommand(Command):
     action = "?"
     caption = "get info about user"
@@ -125,12 +146,12 @@ class KickCommand(Command):
 
 class UseItemCommand(Command):
     @staticmethod
-    def Init(n):
-        return UseItemCommand(n)
+    def Init(id,name):
+        return UseItemCommand(id, name)
 
-    def __init__(self, number):
-        self.item_id = number
-        self.caption = "use intem # " + str(number)
+    def __init__(self, id, name):
+        self.item_id = id
+        self.caption = "use item " + str(name)
 
     def execute(self, user):
         item_id = self.item_id
@@ -147,13 +168,14 @@ class UseItemCommand(Command):
                 if (user_stat.stat_id == item_stat.stat_id):
                     user_stat.value += item_stat.value
                     user_stat.save()
-                    result += "stat " + str(user_stat.stat_id) + "+= "+str(user_stat.value)
-                pass
-        result+="\r\n"
+                    result += "stat " + str(user_stat.stat_id) + "+= " + str(user_stat.value)
+        result += "\r\n"
         result += str(ui.count) + " " + item.name + " left"
-        return result
+        user.prev_state_id = None
+        user.state_id = user.prev_state_id
+        user.save()
 
-        pass
+        return result
 
 
 """
