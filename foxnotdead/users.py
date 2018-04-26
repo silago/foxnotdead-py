@@ -91,8 +91,11 @@ class User(Model):
         return "It's some bot"
 
     @staticmethod
-    def get_user(id) -> object:
-        return User.create_base()
+    def get_user(user_id) -> object:
+        if user_id:
+            return User.get(User.id == user_id)
+        else:
+            return User.create_base()
 
     @staticmethod
     def create_base():

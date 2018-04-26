@@ -137,12 +137,12 @@ class DeathState(BaseState):
 
 
 class WinState(BaseState):
-    caption = "you wincommands"
+    caption = "you win commands"
     db_id = 7
     commands = {
         "*": WalkState
     }
 
-    def process_input(self, User, input: str):
-        User.Win()
-        return super().process_input(User, input)
+    def process_input(self, _user, input: str):
+        return commands.WalkCommand.execute(_user)
+        #return super().process_input(User, input)

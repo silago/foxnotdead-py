@@ -1,6 +1,8 @@
 from peewee import *
 import application.foxnotdead.connection as connection
 from . import users
+from . import items
+from . import loot
 
 class BattleData(Model):
     id = PrimaryKeyField(null=False)
@@ -10,7 +12,7 @@ class BattleData(Model):
     @classmethod
     def get_enemy_id(cls, user_id):
         user = cls.get(BattleData.user_id == user_id)
-        return user.id
+        return user.enemy_id
 
     @classmethod
     def start(cls, user_id, bot_id):
@@ -20,8 +22,13 @@ class BattleData(Model):
         battle.save()
 
     @classmethod
-    def finish(cls, user_id):
-        BattleData.delete().where(user_id == user_id)
+    def finish(cls, user, bot, win):
+        BattleData.delete().where(BattleData.user_id == user.id).execute()
+        result = ""
+        if win:
+            result = loot.get_bot_loot(user, bot)
+        #bot.delete().execute()
+        return  result
 
     class Meta:
         database = connection.db

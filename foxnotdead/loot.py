@@ -3,6 +3,25 @@ from peewee import *
 import application.foxnotdead.connection as connection
 from . import items
 from . import stats
+from . import users
+
+
+
+
+def get_bot_loot(user, bot):
+    result = '"'
+    bot_reward_container = BotRewardContainer.get(BotRewardContainer.user_id == bot.id)
+    container =  Container.get(Container.id == bot_reward_container.container_id)
+    item_containers = ItemsContainer.select().where(ItemsContainer.container_id == container.id)
+    for item_container in item_containers:
+        item = items.Items.get(items.Items.id == item_container.item_id)
+        user_item, created = items.UserItems.get_or_create( item_id = item_container.item_id, user_id = user.id)
+        user_item.count += item_container.value
+        user_item.save()
+        result += "You get  "+str(user_item.count)+ " "+item.name+"\r\n"
+    return result
+    #user = users.User.get(users.User.name == 'silago')
+
 
 
 
@@ -25,22 +44,40 @@ class BotRewardContainer(Model):
         bot_reward_container.save()
 
         items_container = ItemsContainer()
-        items_container.item_id =
+        items_container.item_id = 1 # it's bear
+        items_container.value = 5
+    class Meta:
+        database = connection.db
+        table_name = "bot_reward_container"
+
+
 
 class Container(Model):
     id = PrimaryKeyField(null=False)
+    class Meta:
+        database = connection.db
+        table_name = "container"
 
 class ResourceContainer(Model):
     id = PrimaryKeyField(null=False)
+    class Meta:
+        database = connection.db
+        table_name = "resource_container"
 
 class ItemsContainer(Model):
     id = PrimaryKeyField(null=False)
     container_id = IntegerField()
     item_id  = IntegerField()
     value    = IntegerField()
+    class Meta:
+        database = connection.db
+        table_name = "items_container"
 
 class StatsContainer(Model):
     id = PrimaryKeyField(null=False)
     stat_id = IntegerField()
     item_id  = IntegerField()
     value    = IntegerField()
+    class Meta:
+        database = connection.db
+        table_name = "stats_container"

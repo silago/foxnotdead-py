@@ -22,6 +22,7 @@ class BackCommand(Command):
         user.save()
         return "return"
 
+
 class ViewInventory(Command):
     action = "u"
     caption = "use item"
@@ -121,32 +122,38 @@ class AttackCommand(Command):
 class KickCommand(Command):
     caption = "Kick enemy"
 
+    @staticmethod
+    def get_loot(user, bot):
+
+        pass
+
     @classmethod
     def execute(cls, user):
         result = ""
-
         user = user
         bot_id = battle.BattleData.get_enemy_id(user.id)
         bot = users.User.get_user(bot_id)
-        damage = user.damage + randint(-2, +2)
+
+        damage = user.damage + randint(-2, +11120)
         bot.health -= damage
         result += "you've kicked enemy at " + str(damage) + ", " + str(bot.health) + " health left \r\n"
         if bot.health <= 0:
-            battle.BattleData.finish(users.id)
+            result+=battle.BattleData.finish(user, bot, win=True)
             user.set_state(states.WinState)
 
         damage = bot.damage + randint(-2, +2)
         result += "enemy kicked you at " + str(damage) + ", " + str(user.health) + " health left"
         user.health -= damage
         if user.health <= 0:
-            battle.BattleData.finish(user.id)
+            result += "you win \r\n"
+            result += battle.BattleData.finish(user, bot, win=False)
             user.set_state(states.DeathState)
         return result
 
 
 class UseItemCommand(Command):
     @staticmethod
-    def Init(id,name):
+    def Init(id, name):
         return UseItemCommand(id, name)
 
     def __init__(self, id, name):
@@ -171,8 +178,8 @@ class UseItemCommand(Command):
                     result += "stat " + str(user_stat.stat_id) + "+= " + str(user_stat.value)
         result += "\r\n"
         result += str(ui.count) + " " + item.name + " left"
-        user.prev_state_id = None
         user.state_id = user.prev_state_id
+        user.prev_state_id = None
         user.save()
 
         return result
