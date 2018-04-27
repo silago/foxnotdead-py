@@ -1,3 +1,5 @@
+from peewee import *
+import application.foxnotdead.connection as connection
 from random import randint
 from . import users
 from . import states
@@ -9,6 +11,50 @@ from . import items as _items
 class Command:
     def __init__(self, action, caption):
         pass
+
+
+class StateCommand(Model):
+    id = PrimaryKeyField(null=False)
+    action = CharField()
+    caption = CharField()
+    state_id = IntegerField()
+    next_state_id = IntegerField()
+    requirement_container_id = IntegerField()
+    reward_container_id = IntegerField()
+    text = CharField()
+
+    def execute(self, user):
+        from .stats import UserStats, StatsHolder, UserStats
+        from .loot import Container, ResourceContainer, ItemsContainer, StatsContainer
+        from .items import UserItems
+
+        requirement_containter = Container.get(Container.id == self.requirement_container_id)
+        reward_container = Container.get(Container.id == self.requirement_container_id)
+        uitems = UserItems.select().where(UserItems.user_id == user.id)
+        for ritem in ItemsContainer.select().where(ItemsContainer.container_id == requirement_containter):
+            for uitem in uitems:
+                if uitem.item_id == ritem.item_id:
+                    if uitem.count < ritem.value:
+                        uitem.count -= ritem.value
+                        return "Not enought something"
+
+
+        for uitem in uitems: uitem.save()
+        for reward_item in ItemsContainer.select().where(ItemsContainer.container_id == requirement_containter):
+            uitem, created = UserItems.get_or_create(item_id = reward_item.item_id, user_id = user.id)
+            uitem.count = reward_item.value
+            uitem.save()
+
+
+
+        user.prev_state_id = user.state_id
+        user.state_id = self.next_state_id
+        user.save()
+        return "you got it"
+
+    class Meta:
+        database = connection.db
+        table_name = "state_command"
 
 
 class BackCommand(Command):
@@ -42,12 +88,14 @@ class InfoCommand(Command):
         result = ""
         items = _items.UserItems.get_user_items(user.id)
         stats = user.get_stats()
+        result += "\r\n".join([key + ": " + str(value) for key, value in user.get_stats().items()])
+        result += "\r\n"
 
         # items = user.get_items()
         if not items:
-            result = "you have nothing \r\n"
+            result += "you have nothing \r\n"
         else:
-            result = "you have: \r\n"
+            result += "you have: \r\n"
             i = 0
             for _ in items:
                 i += 1
@@ -138,7 +186,7 @@ class KickCommand(Command):
         bot.health -= damage
         result += "you've kicked enemy at " + str(damage) + ", " + str(bot.health) + " health left \r\n"
         if bot.health <= 0:
-            result+=battle.BattleData.finish(user, bot, win=True)
+            result += battle.BattleData.finish(user, bot, win=True)
             user.set_state(states.WinState)
 
         damage = bot.damage + randint(-2, +2)

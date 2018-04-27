@@ -4,6 +4,15 @@ from . import users
 from . import items
 from . import loot
 
+
+
+class UserBotMatch():
+    @staticmethod
+    def get_bot(user):
+        from .users import  User
+        bot = User.select().where(User.is_bot == True, User.id != user.id, User.level<user.level+2, User.level>user.level-2).order_by(fn.Random()).limit(1).first()
+        return bot
+
 class BattleData(Model):
     id = PrimaryKeyField(null=False)
     user_id  = IntegerField()
@@ -26,7 +35,11 @@ class BattleData(Model):
         BattleData.delete().where(BattleData.user_id == user.id).execute()
         result = ""
         if win:
-            result = loot.get_bot_loot(user, bot)
+            result+= loot.get_bot_loot(user, bot)
+            result+str(bot.exp) + " exp got"
+            user.exp += bot.exp
+            user.save()
+
         #bot.delete().execute()
         return  result
 

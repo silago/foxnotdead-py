@@ -3,14 +3,17 @@ from . import items
 from peewee import *
 import application.foxnotdead.connection as connection
 
+
 class BaseState(Model):
     id = PrimaryKeyField(null=False)
+    name = CharField(null=False)
+    caption = CharField(null=False)
+    reserved = BooleanField(null=False)
     db_id = 0
     commands = {
-        "i" : commands.InfoCommand,
-        "u" : commands.ViewInventory,
+        "i": commands.InfoCommand,
+        "u": commands.ViewInventory,
     }
-    caption = "no state description"
 
     def get_caption(self):
         return self.caption
@@ -18,18 +21,20 @@ class BaseState(Model):
     @staticmethod
     def get_states():
         return {_.db_id: _ for _ in (
-            WalkState, AgressiveSpottedState, NotAgressiveSpottedState, BattleState, InitState, DeathState, WinState, UseItemState
+            WalkState, AgressiveSpottedState, NotAgressiveSpottedState, BattleState, InitState, DeathState, WinState,
+            UseItemState
         )}
 
     @classmethod
-    def get_state(cls, id): # from db and bind it
+    def get_state(cls, id):  # from db and bind it
         print("find state # " + str(id))
         dbstate = BaseState.get(BaseState.id == id)
-        return dbstate._as(cls.get_states().get(dbstate.id,dbstate))
+        return dbstate._as(cls.get_states().get(dbstate.id, dbstate.__class__))
 
     def process_input(self, user, input: str):
         commands = self.get_commands(user)
         command = commands.get(input)
+
         if (command):
             result = command.execute(user)
             return result
@@ -40,7 +45,6 @@ class BaseState(Model):
         self.__class__ = _class
         return self
 
-
     @classmethod
     def get_id(cls):
         return cls.db_id
@@ -49,31 +53,33 @@ class BaseState(Model):
     def get_self(cls):
         pass
 
-
     def get_commands(self, user):
+        from .commands import StateCommand
         base_commands = BaseState.commands
-        return {**base_commands, **self.commands}
+        db_commands = {_.action: _ for _ in StateCommand.select().where(StateCommand.state_id == self.id)}
+
+        return {**base_commands, **self.commands, **db_commands}
 
     class Meta:
         database = connection.db
         table_name = "states"
 
+
 class UseItemState(BaseState):
     caption = "Choose item"
     db_id = 8
     commands = {
-        "b" : commands.BackCommand
+        "b": commands.BackCommand
     }
 
     def get_commands(self, user):
         user_items = items.UserItems.get_user_items(user.id)
         _commands = {}
-        counter= 0
+        counter = 0
         for _ in user_items:
             _commands[str(counter)] = commands.UseItemCommand.Init(_.items.id, _.items.name)
         base_commands = BaseState.commands
         return {**base_commands, **UseItemState.commands, **_commands}
-
 
 
 class WalkState(BaseState):
@@ -86,6 +92,7 @@ class WalkState(BaseState):
 
 class BattleState(BaseState):
     caption = "you are in battle"
+
     class BattleBotState:
         id = 0
         state_id = 0
@@ -94,7 +101,6 @@ class BattleState(BaseState):
     @classmethod
     def Init(cls, user, bot):
         pass
-
 
     db_id = 2
     commands = {
@@ -145,4 +151,15 @@ class WinState(BaseState):
 
     def process_input(self, _user, input: str):
         return commands.WalkCommand.execute(_user)
-        #return super().process_input(User, input)
+        # return super().process_input(User, input)
+
+
+class DatabaseState(BaseState):
+    def get_db_commands(self, user):
+        pass
+
+    def get_commands(self, user):
+        base_commands = BaseState.commands
+        return {**base_commands, **self.commands}
+
+    pass

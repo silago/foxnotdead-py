@@ -1,6 +1,6 @@
 import sys, os
-import application.foxnotdead.users as users
-import application.foxnotdead.connection as connection
+import foxnotdead.users as users
+import foxnotdead.connection as connection
 
 
 from peewee import *
@@ -11,6 +11,8 @@ class App:
     @staticmethod
     def run() -> None:
         #user = users.User.get_user(1)
+        print(users)
+        exit(0)
         user = users.User.get(users.User.name == 'silago')
         while True:
             state = user.get_state()
