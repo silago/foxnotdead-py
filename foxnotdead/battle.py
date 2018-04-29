@@ -1,5 +1,5 @@
 from peewee import *
-import application.foxnotdead.connection as connection
+from . import connection
 from . import users
 from . import items
 from . import loot

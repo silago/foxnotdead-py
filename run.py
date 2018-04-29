@@ -1,9 +1,11 @@
 import sys, os
-import foxnotdead.users as users
-import foxnotdead.connection as connection
+from foxnotdead import models
 
+from foxnotdead import items
+from foxnotdead import users
 
 from peewee import *
+
 
 
 
@@ -11,10 +13,8 @@ class App:
     @staticmethod
     def run() -> None:
         #user = users.User.get_user(1)
-        print(users)
-        exit(0)
-        user = users.User.get(users.User.name == 'silago')
         while True:
+            user = users.User.get(users.User.name == 'silago')
             state = user.get_state()
             commands = state.get_commands(user)
             print("current state: "+ state.get_caption())

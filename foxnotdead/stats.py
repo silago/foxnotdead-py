@@ -1,6 +1,6 @@
 from . import commands
 from peewee import *
-import application.foxnotdead.connection as connection
+from . import connection
 
 
 
@@ -19,6 +19,8 @@ class StatsHolder(Model):
 
 
 class UserStats(Model):
+    from . import users
+
     id = PrimaryKeyField(null=False)
     stat_id = IntegerField()
     user_id = IntegerField()

@@ -1,5 +1,5 @@
 from peewee import *
-import application.foxnotdead.connection as connection
+from . import connection
 from random import randint
 from . import users
 from . import states
@@ -11,6 +11,46 @@ from . import items as _items
 class Command:
     def __init__(self, action, caption):
         pass
+
+
+class UserStates(Model):
+    id = PrimaryKeyField(null=False)
+    user_id = IntegerField(null=False)
+    state_id = IntegerField(null=False)
+
+    @classmethod
+    def open(csl, user, state_id):
+        user_state, created = cls.get_or_create(user_id=user.id, state_id=state_id)
+        user_state.save()
+
+
+class StateCommandNext(Model):
+    id = PrimaryKeyField(null=False)
+    command_id = IntegerField()
+    state_id = IntegerField()
+    prob = IntegerField()
+    luck_based = BooleanField()
+
+    @classmethod
+    def get_next_state(cls, command):
+        states = cls.select().where(cls.command_id == command.id)
+        if len(states) == 1:
+            return states.first().state_id
+
+        total = 0
+        prev = 0
+        for _ in states: total += _.prob
+        r = randint(0, total)
+        for _ in states:
+            if r > prev and x < _.prob:
+                return _.state_id
+            prev = _.prob
+
+        return command.next_state_id
+
+    class Meta:
+        database = connection.db
+        table_name = "state_command_next"
 
 
 class StateCommand(Model):
@@ -38,17 +78,14 @@ class StateCommand(Model):
                         uitem.count -= ritem.value
                         return "Not enought something"
 
-
         for uitem in uitems: uitem.save()
         for reward_item in ItemsContainer.select().where(ItemsContainer.container_id == requirement_containter):
-            uitem, created = UserItems.get_or_create(item_id = reward_item.item_id, user_id = user.id)
+            uitem, created = UserItems.get_or_create(item_id=reward_item.item_id, user_id=user.id)
             uitem.count = reward_item.value
             uitem.save()
 
-
-
         user.prev_state_id = user.state_id
-        user.state_id = self.next_state_id
+        user.state_id = StateCommandNext.get_next_state(self.id) #self.next_state_id
         user.save()
         return "you got it"
 

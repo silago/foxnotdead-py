@@ -1,8 +1,8 @@
-from . import states
 from peewee import *
-import application.foxnotdead.connection as connection
-from . import items
-from . import stats
+
+import foxnotdead.states as states
+import foxnotdead.stats  as stats
+from . import connection
 
 
 class BotTemplate(Model):
@@ -23,6 +23,10 @@ class User(Model):
     level = IntegerField()
     exp = IntegerField()
     is_bot = BooleanField()
+    related_name = "User"
+
+    def __unicode__(self):
+        return self.name
 
     def __init__(self, *args, **kwargs):
         from .levels import Levels
@@ -136,6 +140,7 @@ class User(Model):
         self.save()
 
     def get_items(self):
+        import foxnnotdead.items as items
         return items.UserItems.get_user_items(self.id)
 
     @staticmethod
@@ -154,6 +159,7 @@ class User(Model):
     class Meta:
         database = connection.db
         table_name = "users"
+        related_name = "User"
 
 
 class Levels(Model):

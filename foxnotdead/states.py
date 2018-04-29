@@ -1,7 +1,7 @@
 from . import commands
 from . import items
 from peewee import *
-import application.foxnotdead.connection as connection
+from . import connection
 
 
 class BaseState(Model):

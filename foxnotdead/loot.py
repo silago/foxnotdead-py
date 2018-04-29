@@ -1,6 +1,6 @@
 from . import states
 from peewee import *
-import application.foxnotdead.connection as connection
+from . import connection
 from . import items
 from . import stats
 from . import users
