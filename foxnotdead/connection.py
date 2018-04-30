@@ -10,7 +10,7 @@ db_port = os.environ["db_port"]
 
 
 if (db_type == "pg"):
-    PostgresqlDatabase(db_name, user=db_user, password=db_pass,
+    DATABASE = PostgresqlDatabase(db_name, user=db_user, password=db_pass,
                            host=db_host, port=db_port)
 else:
     DATABASE = SqliteDatabase(
