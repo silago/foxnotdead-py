@@ -220,7 +220,7 @@ class KickCommand(Command):
         bot_id = battle.BattleData.get_enemy_id(user.id)
         bot = users.User.get_user(bot_id)
 
-        damage = user.damage + randint(-2, +11120)
+        damage = user.damage + randint(-1, +20)
         bot.health -= damage
         result += "you've kicked enemy at " + str(damage) + ", " + str(bot.health) + " health left \r\n"
         if bot.health <= 0:
