@@ -73,12 +73,15 @@ class UseItemState(BaseState):
     }
 
     def get_commands(self, user):
-        user_items = items.UserItems.get_user_items(user.id)
+        user_items = items.UserItems.get_user_items(user.id, only_usable =True)
         _commands = {}
         counter = 0
         for _ in user_items:
-            _commands[str(counter)] = commands.UseItemCommand.Init(_.items.id, _.items.name)
-        base_commands = BaseState.commands
+            _commands[str(counter)] =\
+            _i = commands.UseItemCommand.Init(_.items.id, _.items.name)
+            counter+=1
+
+        base_commands = {k:v for k,v in BaseState.commands.items() if v != commands.ViewInventory}
         return {**base_commands, **UseItemState.commands, **_commands}
 
 

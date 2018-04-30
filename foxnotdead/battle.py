@@ -11,6 +11,7 @@ class UserBotMatch():
     def get_bot(user):
         from .users import  User
         bot = User.select().where(User.is_bot == True, User.id != user.id, User.level<user.level+2, User.level>user.level-2).order_by(fn.Random()).limit(1).first()
+        bot.Init()
         return bot
 
 class BattleData(Model):

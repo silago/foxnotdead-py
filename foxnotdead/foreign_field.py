@@ -1,6 +1,6 @@
 from peewee import *
 
-class _ForeignKeyField(ForeignKeyField):
+class ForeignKeyField(ForeignKeyField):
 
 
     def __init__(self, model, field=None, backref=None, on_delete=None,

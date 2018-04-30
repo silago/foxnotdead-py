@@ -16,6 +16,8 @@ def get_bot_loot(user, bot):
     for item_container in item_containers:
         item = items.Items.get(items.Items.id == item_container.item_id)
         user_item, created = items.UserItems.get_or_create( item_id = item_container.item_id, user_id = user.id)
+        if not user_item.count:
+            user_item.count = 0
         user_item.count += item_container.value
         user_item.save()
         result += "You get  "+str(user_item.count)+ " "+item.name+"\r\n"

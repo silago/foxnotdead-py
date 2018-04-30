@@ -5,6 +5,7 @@ from . import stats
 class Class(Model):
     id = PrimaryKeyField(null=False)
     name = CharField()
+
     class Meta:
         database = connection.db
         table_name = "classes"
@@ -12,6 +13,7 @@ class Class(Model):
 class Levels(Model):
     id = PrimaryKeyField(null=False)
     exp = IntegerField()
+
     class Meta:
         database = connection.db
         table_name = "levels"

@@ -2,6 +2,7 @@ from peewee import *
 
 import foxnotdead.states as states
 import foxnotdead.stats  as stats
+
 from . import connection
 
 
@@ -28,25 +29,42 @@ class User(Model):
     def __unicode__(self):
         return self.name
 
-    def __init__(self, *args, **kwargs):
+    def Init(self):
         from .levels import Levels
-        super().__init__(*args, **kwargs)
+        if not self.level: self.level = 1
+        if not self.exp: self.exp = 1
+        if not self.state_id: self.state_id = 1
 
         level = Levels.get(Levels.id == self.level)
+        print("3>>>")
+        print(self.id)
         self.damage = 10
         self.health = 100
         self._compute_stats()
 
+        print("4>>>")
+
         if not self.is_bot:
             if level.exp < self.exp:
-                #while level.exp < self.exp:
+                # while level.exp < self.exp:
                 #    self.level += 1
                 self.level += 1
 
                 self._compute_stats()
                 self.save()
 
+        print("5>>>")
         self._stats = self._get_stats()
+        print("6>>>")
+        pass
+
+    def __init__(self, *args, **kwargs):
+        from .levels import Levels
+        super().__init__(*args, **kwargs)
+        self.health = 100
+        self.damage = 10
+        print("1>>>")
+        print("2>>>")
 
     def on_equip_(self):
         pass
@@ -79,19 +97,28 @@ class User(Model):
         from .levels import ClassLevelStats
         from .stats import StatsHolder
 
+        from .items import ItemsStats, UserItems, Items
+
         level_stat = StatsHolder.select(StatsHolder.value) \
             .join(ClassLevelStats, on=(StatsHolder.container_id == ClassLevelStats.container_id)) \
             .where(
             StatsHolder.stat_id == stat_id,
         ).first()
+        lvval = level_stat.value if level_stat else 0
 
-        return level_stat.value if level_stat else 0
+        items_stat = UserItems.select(fn.COALESCE(fn.SUM(ItemsStats.value), 0).alias('total')) \
+            .join(Items, on=(Items.id == UserItems.id)) \
+            .join(ItemsStats, on=(ItemsStats.item_id == Items.id)) \
+            .where(
+            UserItems.user_id == self.id,
+            UserItems.slot_id,
+            Items.equipable,
+            ItemsStats.stat_id == stat_id
+        ).first()
 
-        # compute stats:
-        # 1. compute user class level stats
-        # 2. compute user items stats
-        # 3 ???
-        pass
+        itemval = items_stat.total
+
+        return lvval + itemval
 
     def _compute_stats(self):
         from .stats import Stats, UserStats
@@ -144,10 +171,9 @@ class User(Model):
         return items.UserItems.get_user_items(self.id)
 
     @staticmethod
-    def create_bot():
+    def create_bot(user):
         from .battle import UserBotMatch
-        bot = UserBotMatch.get_bot(
-        )
+        bot = UserBotMatch.get_bot(user)
         return bot
         bot = User()
         bot.name = "Bot"
@@ -156,10 +182,10 @@ class User(Model):
 
         return bot
 
+
     class Meta:
         database = connection.db
         table_name = "users"
-        related_name = "User"
 
 
 class Levels(Model):

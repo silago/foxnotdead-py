@@ -153,20 +153,20 @@ class WalkCommand(Command):
     NOTHING_SPOTTED = 2
 
     @staticmethod
-    def create_bot():
-        return users.User.create_bot()
+    def create_bot(user):
+        return users.User.create_bot(user)
 
     @classmethod
     def execute(cls, user) -> str:
         # return msg , state, params, maybe
         x = randint(cls.AGRESSIVE_SPOTTED, cls.NOTHING_SPOTTED)
         if x == cls.NOT_AGRESSIVE_SPOTTED:  # if got troubles
-            bot = cls.create_bot()
+            bot = cls.create_bot(user)
             battle.BattleData.start(user.id, bot.id)
             user.set_state(states.NotAgressiveSpottedState)
             return "friendly man spotted"
         if x == cls.AGRESSIVE_SPOTTED:  # if got troubles
-            bot = cls.create_bot()
+            bot = cls.create_bot(user)
             battle.BattleData.start(user.id, bot.id)
             user.set_state(states.AgressiveSpottedState)
             return "agressive enemy spotted"
@@ -198,7 +198,8 @@ class AttackCommand(Command):
     @classmethod
     def execute(clsm, user) -> str:
         # create battle state
-        bot = users.User()
+        #bot = users.User()
+        bot = battle.UserBotMatch.get_bot(user)
         states.BattleState.Init(user, bot)
         user.set_state(states.BattleState)
         return "You attack"
@@ -247,25 +248,14 @@ class UseItemCommand(Command):
 
     def execute(self, user):
         item_id = self.item_id
-        item = _items.Items.get(_items.Items.id == item_id)
+        item = _items.Items.get(_items.Items.id == self.item_id)
+
         result = "ypu are using " + item.name + "\r\n"
-
-        ui = _items.UserItems.get(_items.UserItems.item_id == item_id, _items.UserItems.user_id == user.id)
-        ui.count -= 1
-
-        item_stats = _items.ItemsStats.select().where(_items.ItemsStats.item_id == item_id)
-        user_stats = stats.UserStats.select().where(stats.UserStats.user_id == user.id)
-        for item_stat in item_stats:
-            for user_stat in user_stats:
-                if (user_stat.stat_id == item_stat.stat_id):
-                    user_stat.value += item_stat.value
-                    user_stat.save()
-                    result += "stat " + str(user_stat.stat_id) + "+= " + str(user_stat.value)
-        result += "\r\n"
-        result += str(ui.count) + " " + item.name + " left"
+        item.get_user_item(user).use(user,item)
         user.state_id = user.prev_state_id
         user.prev_state_id = None
         user.save()
+
 
         return result
 
