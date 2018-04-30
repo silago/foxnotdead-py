@@ -105,19 +105,23 @@ class User(Model):
             StatsHolder.stat_id == stat_id,
         ).first()
         lvval = level_stat.value if level_stat else 0
+        if not lvval: lvval = 0
+
 
         items_stat = UserItems.select(fn.COALESCE(fn.SUM(ItemsStats.value), 0).alias('total')) \
             .join(Items, on=(Items.id == UserItems.id)) \
             .join(ItemsStats, on=(ItemsStats.item_id == Items.id)) \
             .where(
             UserItems.user_id == self.id,
-            UserItems.slot_id,
-            Items.equipable,
+            UserItems.slot_id != None,
+            Items.equipable == True,
             ItemsStats.stat_id == stat_id
         ).first()
 
-        itemval = items_stat.total
+        itemval = items_stat.total if items_stat.total else 0
 
+        print(lvval)
+        print(itemval)
         return lvval + itemval
 
     def _compute_stats(self):
