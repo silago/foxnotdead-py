@@ -6,9 +6,12 @@ from foxnotdead import users
 
 from peewee import *
 
+
 from telegram.ext import Updater, CommandHandler, MessageHandler, Filters
 
-updater = Updater('590889402:AAG-OPeK9bJAPdNU_9h_WXYs7e8eLfZBy7E')
+print(os.environ['tg_token'])
+updater = Updater(os.environ['tg_token'])
+
 
 import logging
 
@@ -22,9 +25,7 @@ class App:
         txt = ""
         user, created = users.User.get_or_create(name=update.message.from_user.first_name)
         if created:
-            print(user)
             user.save()
-        print("<<<<<<<<<<")
         user.Init()
 
         state = user.get_state()
@@ -46,13 +47,10 @@ class App:
     def run(name) -> None:
         # user = users.User.get_user(1)
         while True:
-            print(">>>>>>>>>")
             user, created      = users.User.get_or_create(name=name)
 
             if created:
-                print(user)
                 user.save()
-            print("<<<<<<<<<<")
             user.Init()
 
             state = user.get_state()
@@ -63,7 +61,6 @@ class App:
 
             user_input = input()  # input("enter the command \r\n")
             data = state.process_input(user, user_input)
-            print(data)
             # afteward print state actions
 
 
