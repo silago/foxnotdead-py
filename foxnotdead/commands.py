@@ -19,7 +19,7 @@ class UserStates(Model):
     state_id = IntegerField(null=False)
 
     @classmethod
-    def open(csl, user, state_id):
+    def open(cls, user, state_id):
         user_state, created = cls.get_or_create(user_id=user.id, state_id=state_id)
         user_state.save()
 
@@ -76,17 +76,19 @@ class StateCommand(Model):
                 if uitem.item_id == ritem.item_id:
                     if uitem.count < ritem.value:
                         uitem.count -= ritem.value
-                        return "Not enought something"
+                        return "Not enough something"
 
+        reward_container.give_reward(user)
+        """
         for uitem in uitems: uitem.save()
-        for reward_item in ItemsContainer.select().where(ItemsContainer.container_id == requirement_containter):
+        for reward_item in ItemsContainer.select().where(ItemsContainer.container_id == reward_container):
             uitem, created = UserItems.get_or_create(item_id=reward_item.item_id, user_id=user.id)
             uitem.count = reward_item.value
             uitem.save()
-
-        user.prev_state_id = user.state_id
-        user.state_id = StateCommandNext.get_next_state(self.id) #self.next_state_id
-        user.save()
+        """
+        user.set_state(
+            StateCommandNext.get_next_state(self.id)
+        )
         return "you got it"
 
     class Meta:
@@ -112,7 +114,7 @@ class ViewInventory(Command):
 
     @classmethod
     def execute(cls, user):
-        user.set_state(states.UseItemState)
+        user.set_state(states.UseItemState.db_id)
         return "Choose item to use"
 
 
@@ -124,8 +126,10 @@ class InfoCommand(Command):
     def execute(cls, user):
         result = ""
         items = _items.UserItems.get_user_items(user.id)
-        stats = user.get_stats()
-        result += "\r\n".join([key + ": " + str(value) for key, value in user.get_stats().items()])
+
+        #print(user.stats.items())
+        #exit(0)
+        result += str(user.stats)
         result += "\r\n"
 
         # items = user.get_items()
@@ -163,12 +167,12 @@ class WalkCommand(Command):
         if x == cls.NOT_AGRESSIVE_SPOTTED:  # if got troubles
             bot = cls.create_bot(user)
             battle.BattleData.start(user.id, bot.id)
-            user.set_state(states.NotAgressiveSpottedState)
+            user.set_state(states.NotAgressiveSpottedState.db_id)
             return "friendly man spotted"
         if x == cls.AGRESSIVE_SPOTTED:  # if got troubles
             bot = cls.create_bot(user)
             battle.BattleData.start(user.id, bot.id)
-            user.set_state(states.AgressiveSpottedState)
+            user.set_state(states.AgressiveSpottedState.db_id)
             return "agressive enemy spotted"
         else:
             return "nothing happens"
@@ -184,12 +188,24 @@ class RunCommand(Command):
     def execute(cls, user) -> str:
         have_run = randint(0, 1)
         if have_run:
-            user.set_state(states.WalkState)
-            battle.BattleData.finish(users.id)
+            user.set_state(states.WalkState.db_id)
+            battle.BattleData.finish(user.id)
             return "you've runned"
         else:
-            user.set_state(states.BattleState)
+            user.set_state(states.BattleState.db_id)
             return "you couldn't run. defend yourseld"
+
+
+
+class NewGameCommand(Command):
+    caption = "Set new game"
+    @classmethod
+    def execute(clsm, user) -> str:
+        user.delete_everything()
+        user.on_create()
+        user.set_state(states.WalkState.db_id)
+        return "You attack"
+
 
 
 class AttackCommand(Command):
@@ -201,7 +217,7 @@ class AttackCommand(Command):
         #bot = users.User()
         bot = battle.UserBotMatch.get_bot(user)
         states.BattleState.Init(user, bot)
-        user.set_state(states.BattleState)
+        user.set_state(states.BattleState.db_id)
         return "You attack"
 
 
@@ -220,20 +236,23 @@ class KickCommand(Command):
         bot_id = battle.BattleData.get_enemy_id(user.id)
         bot = users.User.get_user(bot_id)
 
-        damage = user.damage + randint(-1, +20)
-        bot.health -= damage
-        result += "you've kicked enemy at " + str(damage) + ", " + str(bot.health) + " health left \r\n"
-        if bot.health <= 0:
-            result += battle.BattleData.finish(user, bot, win=True)
-            user.set_state(states.WinState)
+        damage = user.stats.damage + randint(-1, +20)
+        bot.stats.health = bot.stats.health  - damage
 
-        damage = bot.damage + randint(-2, +2)
-        result += "enemy kicked you at " + str(damage) + ", " + str(user.health) + " health left"
-        user.health -= damage
-        if user.health <= 0:
+
+
+        result += "you've kicked enemy at " + str(damage) + ", " + str(bot.stats.health) + " health left \r\n"
+        if bot.stats.health <= 0:
+            result += battle.BattleData.finish(user, bot, win=True)
+            user.set_state(states.WinState.db_id)
+
+        damage = bot.stats.damage  + randint(-2, +2)
+        result += "enemy kicked you at " + str(damage) + ", " + str(user.stats.health) + " health left"
+        user.stats.health -= damage
+        if user.stats.health <= 0:
             result += "you win \r\n"
             result += battle.BattleData.finish(user, bot, win=False)
-            user.set_state(states.DeathState)
+            user.set_state(states.DeathState.db_id)
         return result
 
 

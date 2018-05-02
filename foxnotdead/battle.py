@@ -26,9 +26,12 @@ class BattleData(Model):
 
     @classmethod
     def start(cls, user_id, bot_id):
+        from . import users
         battle = BattleData()
         battle.user_id = user_id
         battle.enemy_id = bot_id
+        bot = users.User.get(users.User.id == bot_id)
+        bot.on_create()
         battle.save()
 
     @classmethod
@@ -36,12 +39,15 @@ class BattleData(Model):
         BattleData.delete().where(BattleData.user_id == user.id).execute()
         result = ""
         if win:
+            print("WIN")
             result+= loot.get_bot_loot(user, bot)
             result+str(bot.exp) + " exp got"
             user.exp += bot.exp
             user.save()
 
         #bot.delete().execute()
+        print(">>>>>>>")
+        print(result)
         return  result
 
     class Meta:

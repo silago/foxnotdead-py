@@ -15,8 +15,8 @@ updater = Updater(os.environ['tg_token'])
 
 import logging
 
-logging.basicConfig()
-logging.getLogger().setLevel(logging.DEBUG)
+#logging.basicConfig()
+#logging.getLogger().setLevel(logging.DEBUG)
 
 
 class App:
@@ -24,6 +24,8 @@ class App:
     def cycle(bot, update):
         txt = ""
         user, created = users.User.get_or_create(name=update.message.from_user.first_name)
+        if created:
+            user.on_create()
         if created:
             user.save()
         user.Init()
@@ -51,16 +53,18 @@ class App:
 
             if created:
                 user.save()
-            user.Init()
+                user.on_create()
 
+            user.Init()
             state = user.get_state()
-            commands = state.get_commands(user)
-            print("current state: " + state.get_caption())
-            for _ in commands:
-                print(_ + " " + commands[_].caption)
+            print(state.get_caption())
+            print(
+                "\r\n".join([k+": "+v.caption for k,v in user.get_state().get_commands(user).items()])
+            )
 
             user_input = input()  # input("enter the command \r\n")
             data = state.process_input(user, user_input)
+            print(data)
             # afteward print state actions
 
 
