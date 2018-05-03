@@ -35,8 +35,7 @@ def get_bot_loot(user, bot):
         container = Container.get(Container.id == bot_reward_container.container_id)
         return container.give_reward(user)
     except Exception as e:
-        print(e)
-        return "You've recieve nothing"
+        return ""
     # user = users.User.get(users.User.name == 'silago')
 
 
@@ -77,9 +76,12 @@ class Container(Model):
         pass
 
     def give_reward(self, user):
-        from .items import UserItems
-        for reward_item in ItemsContainer.select().where(ItemsContainer.container_id == self.id):
+        from .items import UserItems, Items
+        result = ""
+
+        for reward_item in ItemsContainer.select(ItemsContainer, Items).join(Items, on=(ItemsContainer.item_id == Items.id)).where(ItemsContainer.container_id == self.id):
             uitem, created = UserItems.get_or_create(item_id=reward_item.item_id, user_id=user.id)
+            result+=reward_item.items.name+" "+str(reward_item.value)+"\r\n"
             uitem.count = reward_item.value
             uitem.save()
 
@@ -88,10 +90,13 @@ class Container(Model):
             if created:
                 command.save()
 
+        """
         for reward in StatsContainer.select().where(StatsContainer.container_id == self.id):
             user.stats.set_by_id(reward.value)
-
-        return "You got something"
+        """
+        if (result):
+            return "Ты получил: "+result
+        return "Ты получил лишь пиздюлей"
 
 
 class ResourceContainer(Model):

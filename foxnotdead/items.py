@@ -69,6 +69,7 @@ class UserItems(Model):
             self.count -= 1
             item_stats = ItemsStats.select().where(ItemsStats.item_id == self.item_id)
             user_stats = stats.UserStats.select().where(stats.UserStats.user_id == user.id)
+            for _ in user_stats: print(str(_.id)+":"+str(_.value)+",")
             for item_stat in item_stats:
                 for user_stat in user_stats:
                     if (user_stat.stat_id == item_stat.stat_id):
@@ -77,6 +78,7 @@ class UserItems(Model):
                         #result += "stat " + str(user_stat.stat_id) + "+= " + str(user_stat.value)
             #result += "\r\n"
             #result += str(ui.count) + " " + item.name + " left"
+            self.save()
 
 
     def __unicode__(self):

@@ -9,7 +9,7 @@ from peewee import *
 
 from telegram.ext import Updater, CommandHandler, MessageHandler, Filters
 
-print(os.environ['tg_token'])
+#print(os.environ['tg_token'])
 updater = Updater(os.environ['tg_token'])
 
 
@@ -38,11 +38,14 @@ class App:
 
         state = user.get_state()
         commands = state.get_commands(user)
-        txt += "current state: " + str(state.get_caption()) + "\r\n"
+        txt += "" + str(state.get_caption()) + "\r\n"
         for _ in commands:
             txt += str(_) + " " + str(commands[_].caption) + "\r\n"
 
-        print(txt)
+
+        result = "--------------\r\n"
+        result += txt
+        result += "--------------\r\n"
         update.message.reply_text(txt)
 
     @staticmethod
@@ -64,8 +67,9 @@ class App:
 
             user_input = input()  # input("enter the command \r\n")
             data = state.process_input(user, user_input)
+            print("-----------")
             print(data)
-            # afteward print state actions
+            print("-----------")
 
 
 import sys

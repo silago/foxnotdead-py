@@ -76,7 +76,7 @@ class StateCommand(Model):
                 if uitem.item_id == ritem.item_id:
                     if uitem.count < ritem.value:
                         uitem.count -= ritem.value
-                        return "Not enough something"
+                        return "Чего-то тебе не хватает"
 
         reward_container.give_reward(user)
         """
@@ -89,7 +89,7 @@ class StateCommand(Model):
         user.set_state(
             StateCommandNext.get_next_state(self.id)
         )
-        return "you got it"
+        return "Готово!"
 
     class Meta:
         database = connection.db
@@ -98,29 +98,29 @@ class StateCommand(Model):
 
 class BackCommand(Command):
     action = "b"
-    caption = "go back"
+    caption = "Назад"
 
     @classmethod
     def execute(cls, user):
         user.state_id = user.prev_state_id
         user.prev_state_id = None
         user.save()
-        return "return"
+        return "готово"
 
 
 class ViewInventory(Command):
     action = "u"
-    caption = "use item"
+    caption = "Использовать предмет"
 
     @classmethod
     def execute(cls, user):
         user.set_state(states.UseItemState.db_id)
-        return "Choose item to use"
+        return "Выбери предмет"
 
 
 class InfoCommand(Command):
     action = "?"
-    caption = "get info about user"
+    caption = "Посмотреть на себя"
 
     @classmethod
     def execute(cls, user):
@@ -134,9 +134,9 @@ class InfoCommand(Command):
 
         # items = user.get_items()
         if not items:
-            result += "you have nothing \r\n"
+            result += "У тебя нет ничего \r\n"
         else:
-            result += "you have: \r\n"
+            result += "У тебя есть: \r\n"
             i = 0
             for _ in items:
                 i += 1
@@ -150,7 +150,7 @@ class ShowItemsCommand(Command):
 
 class WalkCommand(Command):
     action = "w"
-    caption = "look for troubles"
+    caption = "Искать проблем на задницу"
 
     AGRESSIVE_SPOTTED = 0
     NOT_AGRESSIVE_SPOTTED = 1
@@ -168,21 +168,21 @@ class WalkCommand(Command):
             bot = cls.create_bot(user)
             battle.BattleData.start(user.id, bot.id)
             user.set_state(states.NotAgressiveSpottedState.db_id)
-            return "friendly man spotted"
+            return "Замечен враг: " + bot.name
         if x == cls.AGRESSIVE_SPOTTED:  # if got troubles
             bot = cls.create_bot(user)
             battle.BattleData.start(user.id, bot.id)
             user.set_state(states.AgressiveSpottedState.db_id)
-            return "agressive enemy spotted"
+            return "Замечен враг: Агрессивный "+bot.name
         else:
-            return "nothing happens"
+            return "Ничего не происходит"
 
 
 """ we can make thios as graph"""
 
 
 class RunCommand(Command):
-    caption = "Leave"
+    caption = "Смыться"
 
     @classmethod
     def execute(cls, user) -> str:
@@ -190,26 +190,24 @@ class RunCommand(Command):
         if have_run:
             user.set_state(states.WalkState.db_id)
             battle.BattleData.finish(user.id)
-            return "you've runned"
+            return "Ты смысля!"
         else:
             user.set_state(states.BattleState.db_id)
-            return "you couldn't run. defend yourseld"
+            return "Враг заметил тебя!"
 
 
 
 class NewGameCommand(Command):
-    caption = "Set new game"
+    caption = "Начать новую игру"
     @classmethod
     def execute(clsm, user) -> str:
         user.delete_everything()
         user.on_create()
         user.set_state(states.WalkState.db_id)
-        return "You attack"
-
-
-
+        return "Проснувшись рано утром, после беспокойного сна "+user.name+"обнаружил, что превратился в безобразного " \
+                                                                           "ролевика. "
 class AttackCommand(Command):
-    caption = "Attack"
+    caption = "Атаковать"
 
     @classmethod
     def execute(clsm, user) -> str:
@@ -218,11 +216,11 @@ class AttackCommand(Command):
         bot = battle.UserBotMatch.get_bot(user)
         states.BattleState.Init(user, bot)
         user.set_state(states.BattleState.db_id)
-        return "You attack"
+        return ""
 
 
 class KickCommand(Command):
-    caption = "Kick enemy"
+    caption = "Пнуть врага"
 
     @staticmethod
     def get_loot(user, bot):
@@ -241,13 +239,13 @@ class KickCommand(Command):
 
 
 
-        result += "you've kicked enemy at " + str(damage) + ", " + str(bot.stats.health) + " health left \r\n"
+        result += "Ты пнул врага на " + str(damage) + ", " + str(bot.stats.health) + " здоровья осталось \r\n"
         if bot.stats.health <= 0:
             result += battle.BattleData.finish(user, bot, win=True)
             user.set_state(states.WinState.db_id)
 
         damage = bot.stats.damage  + randint(-2, +2)
-        result += "enemy kicked you at " + str(damage) + ", " + str(user.stats.health) + " health left"
+        result += "Враг пнул тебя на " + str(damage) + ", " + str(user.stats.health) + " здоровья осталось \r\n"
         user.stats.health -= damage
         if user.stats.health <= 0:
             result += "you win \r\n"
@@ -263,13 +261,13 @@ class UseItemCommand(Command):
 
     def __init__(self, id, name):
         self.item_id = id
-        self.caption = "use item " + str(name)
+        self.caption = "применить " + str(name)
 
     def execute(self, user):
         item_id = self.item_id
         item = _items.Items.get(_items.Items.id == self.item_id)
 
-        result = "ypu are using " + item.name + "\r\n"
+        result = item.name + " использовано.\r\n"
         item.get_user_item(user).use(user,item)
         user.state_id = user.prev_state_id
         user.prev_state_id = None
@@ -307,13 +305,16 @@ class ShowInventory(Command):
 
 
 class InspectEnemyCommand(Command):
-    caption = "Inspect enemy"
+    caption = "Осмотреть врага"
 
     @classmethod
     def execute(cls, user):
         bot_id = battle.BattleData.get_enemy_id(user.id)
         bot = users.User.get_user(bot_id)
-        return bot.get_info()
+        result = ""
+        result += bot.name + "\r\n"
+        result += bot.get_info()+"\r\n"
+        return result
 
 
 """

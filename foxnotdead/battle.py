@@ -39,15 +39,10 @@ class BattleData(Model):
         BattleData.delete().where(BattleData.user_id == user.id).execute()
         result = ""
         if win:
-            print("WIN")
             result+= loot.get_bot_loot(user, bot)
-            result+str(bot.exp) + " exp got"
+            result+str(bot.exp) + " Опыта получено"
             user.exp += bot.exp
             user.save()
-
-        #bot.delete().execute()
-        print(">>>>>>>")
-        print(result)
         return  result
 
     class Meta:
