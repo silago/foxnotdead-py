@@ -65,20 +65,30 @@ class StateCommand(Model):
 
     def execute(self, user):
         from .stats import UserStats, StatsHolder, UserStats
-        from .loot import Container, ResourceContainer, ItemsContainer, StatsContainer
+        from .loot import Container, ResourceContainer, ItemsContainer
         from .items import UserItems
 
-        requirement_containter = Container.get(Container.id == self.requirement_container_id)
-        reward_container = Container.get(Container.id == self.requirement_container_id)
-        uitems = UserItems.select().where(UserItems.user_id == user.id)
-        for ritem in ItemsContainer.select().where(ItemsContainer.container_id == requirement_containter):
-            for uitem in uitems:
-                if uitem.item_id == ritem.item_id:
-                    if uitem.count < ritem.value:
-                        uitem.count -= ritem.value
-                        return "Чего-то тебе не хватает"
+        requirement_containter = Container.get_or_none(Container.id == self.requirement_container_id)
 
-        reward_container.give_reward(user)
+        if requirement_containter:
+            unresolved_stats = UserStats.select() \
+                .join(StatsHolder, on=(UserStats.stat_id == StatsHolder.stat_id)) \
+                .where(StatsHolder.value > UserStats.value).count()
+            print(unresolved_stats)
+            if (unresolved_stats > 0):
+                return "Чего-то тебе не хватает"
+
+            uitems = UserItems.select().where(UserItems.user_id == user.id)
+            for ritem in ItemsContainer.select().where(ItemsContainer.container_id == requirement_containter):
+                for uitem in uitems:
+                    if uitem.item_id == ritem.item_id:
+                        if uitem.count < ritem.value:
+                            uitem.count -= ritem.value
+                            return "Чего-то тебе не хватает"
+
+        reward_container = Container.get_or_none(Container.id == self.reward_container_id)
+        if reward_container:
+            reward_container.give_reward(user)
         """
         for uitem in uitems: uitem.save()
         for reward_item in ItemsContainer.select().where(ItemsContainer.container_id == reward_container):
@@ -87,7 +97,7 @@ class StateCommand(Model):
             uitem.save()
         """
         user.set_state(
-            StateCommandNext.get_next_state(self.id)
+            StateCommandNext.get_next_state(self)
         )
         return "Готово!"
 
@@ -124,24 +134,25 @@ class InfoCommand(Command):
 
     @classmethod
     def execute(cls, user):
-        result = ""
+        result = ()
         items = _items.UserItems.get_user_items(user.id)
 
-        #print(user.stats.items())
-        #exit(0)
-        result += str(user.stats)
-        result += "\r\n"
+        # print(user.stats.items())
+        # exit(0)
+        result += str(user.stats),
+        result += "exp: " + str(user.exp),
+        result += "level: " + str(user.level),
 
         # items = user.get_items()
         if not items:
-            result += "У тебя нет ничего \r\n"
+            result += "У тебя нет ничего",
         else:
-            result += "У тебя есть: \r\n"
+            result += "У тебя есть:",
             i = 0
             for _ in items:
                 i += 1
-                result += " " + str(i) + ")" + str(_.count) + " " + _.items.name + "\r\n"
-        return result
+                result += " " + str(i) + ")" + str(_.count) + " " + _.items.name ,
+        return "\r\n".join(result)
 
 
 class ShowItemsCommand(Command):
@@ -173,7 +184,7 @@ class WalkCommand(Command):
             bot = cls.create_bot(user)
             battle.BattleData.start(user.id, bot.id)
             user.set_state(states.AgressiveSpottedState.db_id)
-            return "Замечен враг: Агрессивный "+bot.name
+            return "Замечен враг: Агрессивный " + bot.name
         else:
             return "Ничего не происходит"
 
@@ -189,30 +200,32 @@ class RunCommand(Command):
         have_run = randint(0, 1)
         if have_run:
             user.set_state(states.WalkState.db_id)
-            battle.BattleData.finish(user.id)
+            battle.BattleData.finish(user)
             return "Ты смысля!"
         else:
             user.set_state(states.BattleState.db_id)
             return "Враг заметил тебя!"
 
 
-
 class NewGameCommand(Command):
     caption = "Начать новую игру"
+
     @classmethod
     def execute(clsm, user) -> str:
         user.delete_everything()
         user.on_create()
         user.set_state(states.WalkState.db_id)
-        return "Проснувшись рано утром, после беспокойного сна "+user.name+"обнаружил, что превратился в безобразного " \
-                                                                           "ролевика. "
+        return "Проснувшись рано утром, после беспокойного сна " + user.name + "обнаружил, что превратился в безобразного " \
+                                                                               "ролевика. "
+
+
 class AttackCommand(Command):
     caption = "Атаковать"
 
     @classmethod
     def execute(clsm, user) -> str:
         # create battle state
-        #bot = users.User()
+        # bot = users.User()
         bot = battle.UserBotMatch.get_bot(user)
         states.BattleState.Init(user, bot)
         user.set_state(states.BattleState.db_id)
@@ -235,16 +248,14 @@ class KickCommand(Command):
         bot = users.User.get_user(bot_id)
 
         damage = user.stats.damage + randint(-1, +20)
-        bot.stats.health = bot.stats.health  - damage
-
-
+        bot.stats.health = bot.stats.health - damage
 
         result += "Ты пнул врага на " + str(damage) + ", " + str(bot.stats.health) + " здоровья осталось \r\n"
         if bot.stats.health <= 0:
             result += battle.BattleData.finish(user, bot, win=True)
             user.set_state(states.WinState.db_id)
 
-        damage = bot.stats.damage  + randint(-2, +2)
+        damage = bot.stats.damage + randint(-2, +2)
         result += "Враг пнул тебя на " + str(damage) + ", " + str(user.stats.health) + " здоровья осталось \r\n"
         user.stats.health -= damage
         if user.stats.health <= 0:
@@ -268,11 +279,10 @@ class UseItemCommand(Command):
         item = _items.Items.get(_items.Items.id == self.item_id)
 
         result = item.name + " использовано.\r\n"
-        item.get_user_item(user).use(user,item)
+        item.get_user_item(user).use(user, item)
         user.state_id = user.prev_state_id
         user.prev_state_id = None
         user.save()
-
 
         return result
 
@@ -313,7 +323,7 @@ class InspectEnemyCommand(Command):
         bot = users.User.get_user(bot_id)
         result = ""
         result += bot.name + "\r\n"
-        result += bot.get_info()+"\r\n"
+        result += bot.get_info() + "\r\n"
         return result
 
 

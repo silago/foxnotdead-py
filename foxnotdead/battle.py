@@ -35,7 +35,7 @@ class BattleData(Model):
         battle.save()
 
     @classmethod
-    def finish(cls, user, bot, win):
+    def finish(cls, user, bot=None, win=False):
         BattleData.delete().where(BattleData.user_id == user.id).execute()
         result = ""
         if win:

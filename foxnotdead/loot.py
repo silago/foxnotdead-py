@@ -118,6 +118,7 @@ class ItemsContainer(Model):
         table_name = "items_container"
 
 
+"""
 class StatsContainer(Model):
     id = PrimaryKeyField(null=False)
     stat_id = IntegerField()
@@ -127,7 +128,7 @@ class StatsContainer(Model):
     class Meta:
         database = connection.db
         table_name = "stats_container"
-
+"""
 
 class CommandReward(Model):
     id = PrimaryKeyField(null=False)
